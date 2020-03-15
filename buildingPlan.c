@@ -123,15 +123,15 @@ extern void printRoomList(Room *, char *);
 void findDoors( FloorPlan *fplan )
 {
 // Local Variables 
-    int temp_numDoors = 0;
+    int temp_numDoors = EMPTY;
     
 // Set fplan->numDoor to zero to start 
-    fplan->numDoors = 0; 
+    fplan->numDoors = EMPTY; 
     
 // Traverse and count doors 
-    for( int rows = 0; rows < HEIGHT; rows++ )
+    for( int rows = EMPTY; rows < HEIGHT; rows++ )
     {
-        for( int columns = 0; columns < WIDTH; columns++ )
+        for( int columns = EMPTY; columns < WIDTH; columns++ )
         {
             if( fplan->grid[ rows ][ columns ] == DOOR )
             {
@@ -149,9 +149,9 @@ void findDoors( FloorPlan *fplan )
     fplan->doors = tempArray;
 
 // Traverse again, fill each door in fplan->doors with the proper row and column 
-    for( int rows = 0; rows < HEIGHT; rows++ )
+    for( int rows = EMPTY; rows < HEIGHT; rows++ )
     {
-        for( int columns = 0; columns < WIDTH; columns++ )
+        for( int columns = EMPTY; columns < WIDTH; columns++ )
         {
             if( fplan->grid[ rows ][ columns ] == DOOR )
             {
@@ -189,6 +189,10 @@ void findDoors( FloorPlan *fplan )
             Return : 
                 Void 
             Local Variables : 
+                Room *Head : 
+                    The one to guide us through the Linked List 
+                Room *newRoom : 
+                    The new rooms to add to the linked list 
             Functionality : 
                 Create an empty Room dummy, we call it Head 
                 Iterate Building's floorPlan's Grid for a specific floor ( floorNum ( parametre )) to identify rooms 
@@ -202,6 +206,7 @@ void findDoors( FloorPlan *fplan )
                             * ** ** **/
 void findRooms(Building *build, int floorNum) 
 {
+// Local Variables 
 // Create Head 
     Room *head;
     head = calloc( 1, sizeof( Room ));
@@ -223,38 +228,18 @@ void findRooms(Building *build, int floorNum)
                 {
                     newRoom->nextRoom = NULL; 
                     head = newRoom; 
+                    build->floors[ floorNum ].roomList = newRoom;
                 }
 // If the head is not empty, connect the new room to the previous one 
                 else
                 {
                     newRoom->nextRoom = head; 
                     head = newRoom;
+                    build->floors[ floorNum ].roomList = newRoom;
                 }
             }
         }
     }
-                                /**** delete ****/
-                                    printf("\n");
-                                    while( head != NULL )
-                                    {
-                                        printf( " ^ ");
-                                        printf("\n");
-                                        printf( " | ");
-                                        printf("\n");
-                                        printf( " | ");
-                                        printf("\n");
-                                        printf( "[ Room's size          %d ]", head->size );
-                                        printf("\n");
-                                        printf( "[ Room's numDoor       %d ]", head->numDoors );
-                                        printf("\n");
-                                        if ( head->nextRoom != NULL ) { printf( "[ Room's nextRoom size %d ]", head->nextRoom->size ); }
-                                        else { printf(" NULL "); }
-                                        printf("\n");
-                                        head = head->nextRoom;
-                                    }
-                                    printf("---------------------------------------------");
-                                    printf("\n");
-                                /**** delete ****/
 }
                             /** ** ** *
             Function : 
@@ -269,6 +254,14 @@ void findRooms(Building *build, int floorNum)
             Return :
                 Void 
             Local Variables : 
+                int _Up = rows-1 : 
+                    Mimicks a upwards movement
+                int _Down = rows+1 : 
+                    Mimicks a downward movement
+                int _Left = columns-1 : 
+                    Mimicks a leftward movement
+                int _Right = columns+1 :
+                    Mimicks a rightward movement
             Functionality : 
                 Taking the row and the column in the parametres, it recursively traverses the grid up, down, left, and right.  
                 Base case : We stand in a space with surrounded by non zero spaces 
@@ -287,25 +280,31 @@ void findRooms(Building *build, int floorNum)
                             * ** ** **/
 void traverseRecursively( Building **build, Room *newRoom, int floorNum, int rows, int columns )
 {
+// Local Variables 
+    int _Up = rows-1;
+    int _Down = rows+1;
+    int _Left = columns-1;
+    int _Right = columns+1;
+    
 // Increase size counter for the room
     ++newRoom->size;
 // Change the value of the EMPTYSPACE to FLIP_TILE
     (*build)->floors[ floorNum ].grid[ rows ][ columns ] = FLIP_TILE; 
 // Move up. Check
-    if( ( (*build)->floors[ floorNum ].grid[ ( rows-1 ) ][ columns ] ) == EMPTYSPACE )
+    if( ( (*build)->floors[ floorNum ].grid[ ( _Up ) ][ columns ] ) == EMPTYSPACE )
     {
 // if EMPTYSPACE : Repeat 
-        traverseRecursively( build, newRoom, floorNum, ( rows-1 ), columns );
+        traverseRecursively( build, newRoom, floorNum, ( _Up ), columns );
     }
 // if DOOR :
-    else if( ( (*build)->floors[ floorNum ].grid[ ( rows-1 ) ][ columns ] ) == DOOR )
+    else if( ( (*build)->floors[ floorNum ].grid[ ( _Up ) ][ columns ] ) == DOOR )
     {
 // Increase counter 
         ++newRoom->numDoors;
 // Check array of doors 
-        for( int i = 0; i < (*build)->floors[ floorNum ].numDoors; i++ )
+        for( int i = EMPTY; i < (*build)->floors[ floorNum ].numDoors; i++ )
         {
-            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( rows-1 )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( columns )) )
+            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( _Up )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( columns )) )
             {
 // If the match have an openFromRoom value of NULL 
                 if ( ((*build)->floors[ floorNum ].doors[ i ].openFromRoom) == NULL )
@@ -324,16 +323,16 @@ void traverseRecursively( Building **build, Room *newRoom, int floorNum, int row
     }
 //Repeat this process three more times, for directions : Down, Left, Right, respectively
 // Move down 
-    if( ( (*build)->floors[ floorNum ].grid[ ( rows+1 ) ][ columns ] ) == EMPTYSPACE )
+    if( ( (*build)->floors[ floorNum ].grid[ ( _Down ) ][ columns ] ) == EMPTYSPACE )
     {
-        traverseRecursively( build, newRoom, floorNum, ( rows+1 ), columns );
+        traverseRecursively( build, newRoom, floorNum, ( _Down ), columns );
     }
-    else if( ( (*build)->floors[ floorNum ].grid[ ( rows+1 ) ][ columns ] ) == DOOR )
+    else if( ( (*build)->floors[ floorNum ].grid[ ( _Down ) ][ columns ] ) == DOOR )
     {
         ++newRoom->numDoors;
-        for( int i = 0; i < (*build)->floors[ floorNum ].numDoors; i++ )
+        for( int i = EMPTY; i < (*build)->floors[ floorNum ].numDoors; i++ )
         {
-            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( rows+1 )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( columns )) )
+            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( _Down )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( columns )) )
             {
                 if ( ((*build)->floors[ floorNum ].doors[ i ].openFromRoom) == NULL )
                 {
@@ -347,16 +346,16 @@ void traverseRecursively( Building **build, Room *newRoom, int floorNum, int row
         }
     }
 // Go left 
-    if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( columns-1 ) ] ) == EMPTYSPACE )
+    if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( _Left ) ] ) == EMPTYSPACE )
     {
-        traverseRecursively( build, newRoom, floorNum, rows, ( columns-1 ) );
+        traverseRecursively( build, newRoom, floorNum, rows, ( _Left ) );
     }
-    else if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( columns-1 ) ] ) == DOOR )
+    else if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( _Left ) ] ) == DOOR )
     {
         ++newRoom->numDoors;
-        for( int i = 0; i < (*build)->floors[ floorNum ].numDoors; i++ )
+        for( int i = EMPTY; i < (*build)->floors[ floorNum ].numDoors; i++ )
         {
-            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( rows )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( columns-1 )) )
+            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( rows )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( _Left )) )
             {
                 if ( ((*build)->floors[ floorNum ].doors[ i ].openFromRoom) == NULL )
                 {
@@ -370,16 +369,16 @@ void traverseRecursively( Building **build, Room *newRoom, int floorNum, int row
         }
     }
 // Go right 
-    if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( columns+1 ) ] ) == EMPTYSPACE )
+    if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( _Right ) ] ) == EMPTYSPACE )
     {
-        traverseRecursively( build, newRoom, floorNum, rows, ( columns+1 ) ); 
+        traverseRecursively( build, newRoom, floorNum, rows, ( _Right ) ); 
     }
-    else if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( columns+1 ) ] ) == DOOR )
+    else if( ( (*build)->floors[ floorNum ].grid[ rows ][ ( _Right ) ] ) == DOOR )
     {
         ++newRoom->numDoors;
-        for( int i = 0; i < (*build)->floors[ floorNum ].numDoors; i++ )
+        for( int i = EMPTY; i < (*build)->floors[ floorNum ].numDoors; i++ )
         {
-            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( rows )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( columns+1 )) )
+            if( ((*build)->floors[ floorNum ].doors[ i ].row == ( rows )) && ((*build)->floors[ floorNum ].doors[ i ].col == ( _Right )) )
             {
                 if ( ((*build)->floors[ floorNum ].doors[ i ].openFromRoom) == NULL )
                 {
@@ -404,20 +403,213 @@ void traverseRecursively( Building **build, Room *newRoom, int floorNum, int row
     Parametres : 
         Pointer : Building : *build 
     Local Variables : 
+    Room *head_roomList :
+        head to guide us through the roomList linked list 
+    Room *head_offices : 
+        head to guide us through the offices linked list 
+    Room *head_meetingRooms : 
+        head to guide us through the mettingRooms linked list 
+    Room *head_labs :
+        head to guide us through the labs linked list 
+    Room *head_hallways : 
+        head to guide us through the hallways linked list 
+    Room *head_storageRooms : 
+        head to guide us through the storageRooms linked list 
+    int number_ofFloors = EMPTY : 
+        counter for the amount of floors in the building 
     Funcitonality : 
         Goes through all the rooms in the Building ( Parametre ) and classifies them as 
             A storage room, if size <= 6 
             An office, if size > 6 and it has exactly one door 
-            
-        Bulding the linked list for each 
-            
-            IT MUS TGO THROUGH ROOMLSIT 
+            A lab, if size >= 30 and has door between 1 and 4 doors 
+            A meeting room, if the size < 30 and has between 1 and 4 doors 
+            A hallway, if there are more than or equal to 4 doors 
+        Building the linked list for each
+        And freeing every node from roomList in the process
                             ** ** ** */
-void sortRooms( Building *build)
+void sortRooms( Building *build )
 {
+// Local Variables 
+// Create head_roomList to traverse roomList LL
+    Room *head_roomList;
+    head_roomList = calloc( 1, sizeof( Room )); 
+// Create the heads for the Linked Lists in Building 
+    Room *head_offices;           
+    Room *head_meetingRooms;      
+    Room *head_labs;              
+    Room *head_hallways;          
+    Room *head_storageRooms;      
+// Allocate for these 
+    head_offices = calloc( 1, sizeof( Room )); 
+    head_meetingRooms = calloc( 1, sizeof( Room )); 
+    head_labs = calloc( 1, sizeof( Room )); 
+    head_hallways = calloc( 1, sizeof( Room )); 
+    head_storageRooms = calloc( 1, sizeof( Room )); 
+
+// Count the number of floors 
+    int number_ofFloors = EMPTY; 
+    while( build->floors[ number_ofFloors ].roomList != NULL ){ ++number_ofFloors; }
+
+
+// Iterate through all the floors using the previous counter as a breakpoint 
+    for( int i = EMPTY; i < ( number_ofFloors-1 ); i++ )
+    {
+// Equal head_roomList to be the first element in roomList LL
+    head_roomList = build->floors[ i ].roomList;
+// Traverse every Node in roomList LL 
+        while( head_roomList->nextRoom != NULL )
+        {
+// Create newRoom per loop 
+        Room *newRoom; 
+        newRoom = calloc( 1, sizeof( Room ));
     
+// Check what sort of room it will be 
+            if( head_roomList->size <= 6 )
+            {
+// Once decided, check if the LL for those rooms is empty. Then add it. Due to calloc, we check if size == 0 ( not if head == NULL )
+                if( head_storageRooms->size == EMPTY )
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    newRoom->nextRoom = NULL;
+                    head_storageRooms = newRoom;
+                    build->storageRooms = newRoom;
+                }
+// Finally, because of the specific printing method the professor requested, we make the nextRoom = newRoom. Thus, adding 'to the right of the nodes'
+                else
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    newRoom->nextRoom = NULL;
+                    head_storageRooms->nextRoom = newRoom;
+                    head_storageRooms = newRoom;
+                }
+// Repeat the process for the rest of the rooms 
+            }
+            else if(( head_roomList->size > 6 ) && ( head_roomList->numDoors == 1 ))
+            {
+                if( head_offices->size == EMPTY )
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    newRoom->nextRoom = NULL;
+                    head_offices = newRoom;
+                    build->offices = newRoom;
+                }
+                else
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    
+                    newRoom->nextRoom = NULL;
+                    head_offices->nextRoom = newRoom;
+                    head_offices = newRoom;
+                    
+                }
+            }
+            else if(( head_roomList->size >= 30 ) && (( head_roomList->numDoors > 1 )&&( head_roomList->numDoors < 4 )))
+            {
+                if( head_labs->size == EMPTY )
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    newRoom->nextRoom = NULL;
+                    head_labs = newRoom;
+                    build->labs = newRoom;
+                }
+                else
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    
+                    newRoom->nextRoom = NULL;
+                    head_labs->nextRoom = newRoom;
+                    head_labs = newRoom;
+                    
+                }
+            }
+            else if(( head_roomList->size < 30 ) && (( head_roomList->numDoors > 1 )&&( head_roomList->numDoors < 4 )))
+            {
+                if( head_meetingRooms->size == EMPTY )
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    newRoom->nextRoom = NULL;
+                    head_meetingRooms = newRoom;
+                    build->meetingRooms = newRoom;
+                }
+                else
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    
+                    newRoom->nextRoom = NULL;
+                    head_meetingRooms->nextRoom = newRoom;
+                    head_meetingRooms = newRoom;
+                    
+                }
+            }
+            else if(( head_roomList->numDoors >= 4 ))
+            {
+                if( head_hallways->size == EMPTY )
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    newRoom->nextRoom = NULL;
+                    head_hallways = newRoom;
+                    build->hallways = newRoom;
+                }
+                else
+                {
+                    newRoom->floor = i;
+                    newRoom->size = head_roomList->size;
+                    newRoom->numDoors = head_roomList->numDoors;
+                    
+                    newRoom->nextRoom = NULL;
+                    head_hallways->nextRoom = newRoom;
+                    head_hallways = newRoom;
+                    
+                }
+                
+            }
+            free( head_roomList );
+            head_roomList = head_roomList->nextRoom; 
+        }
+    }
 }
 
+void printRoomList( Room *roomList, char *roomType )
+{
+// Local Variables
+    Room *head;
+    head = calloc( 1, sizeof( Room ));
+    head = roomList; 
+// Check for errors     
+    if ( head == NULL ) { return; }
+// The 
+    while( head != NULL )
+    {
+// There is an extra 0-Filled room in the LL so, we give it this extra if-statement  
+        if ( head->size != EMPTY )
+        {
+            printf( "%s ", roomType );
+            printf( "(on floor %d) ", head->floor );
+            printf( " with %d square feet", ( head->size*4 ));
+            printf( " and %d doors", head->numDoors );
+            printf("\n");
+        }
+        head = head->nextRoom;
+    }
+}
 
 
 /*************************************************************************************************
@@ -606,9 +798,8 @@ int main() {
     }
 
   // Sort out all the rooms and display the results
-//  sortRooms(&building);
+  sortRooms(&building);
   
-                            /** ** ** *
   // Display the room lists
   printRoomList(building.offices, "Office");
   printRoomList(building.meetingRooms, "Meeting Room");
@@ -617,7 +808,6 @@ int main() {
   printRoomList(building.hallways, "Hallway");
 
   // Free all allocated memory
-  freeEverything(&building);
+  //freeEverything(&building);
   
-                            * ** ** **/
 }
